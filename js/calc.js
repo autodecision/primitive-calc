@@ -1,199 +1,225 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap');
+const screen = document.getElementById('calc-screen')
+const buttons = [...document.getElementsByClassName('calc-button')];
+let current = document.getElementById('current');
+let old = document.getElementById('old');
+let operators = ['+', '-', '×', '÷'];
+buttons.forEach(element => {
+    element.addEventListener('click', buttonLogic);
+});
+let operator = null;
+// The calculator behaves differently after its first calculation has finished (i.e. now if "+" is input, it adds the next number entered after another operation is input (such as "=" or "-"))
+let initialized = false;
+// This stores an operator for the process explained in the last comment
+let oldOperator = null;
+// Checks if the last thing input was a number. Prevents erroneous behavior with entering one operator after another, etc.
+let numInput = false;
+// Changes number input behavior: allows addition of digits to the "current" string after initialization
+let firstInitDigit = false;
 
-*, *::before, *::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-html {
-    background-color: black;
-    background-image: url("../img/clouds.jpg");
-    background-position: bottom;
-    background-attachment: fixed;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.3rem;
-}
-
-#calc-container {
-    background: black;
-    margin-top: 15vh;
-    height: 60vh;
-    width: 25vw;
-    border: 2px solid rgb(255, 87, 247);
-    display: flex;
-    flex-direction: column;
-}
-
-#calc-screen {
-    background-color: rgb(31, 11, 27);
-    border: 1px solid rgb(255, 87, 247);
-    color: rgb(255, 87, 247);
-    width: 90%;
-    height: 20%;
-    margin: 5% 0;
-    align-self: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    text-overflow: clip;
-    overflow: hidden;
-}
-
-#current, #old {
-    margin: .2rem 1rem;
-}
-
-#old {
-    font-size: 1rem;
-}
-
-#current {
-    align-self: self-end;
-}
-
-#calc-buttons {
-    width: 90%;
-    height: 100%;
-    margin-bottom: 5%;
-    align-self: center;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: minmax(10px, auto);
-    grid-gap: .5rem;
-}
-
-.calc-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid rgb(255, 87, 247);
-    background-color: rgb(31, 11, 27);
-    color: rgb(255, 87, 247);
-}
-
-.calc-button:hover {
-    transition: .4s;
-    background-color: rgb(173, 70, 151);
-}
-
-.calc-button:active {
-    background-color: #ffffff;
-    box-shadow: 0 5px #666;
-    transform: translateY(4px);
-}
-
-#multiply {
-    grid-column: 1;
-    grid-row: 1;
-}
-
-#divide {
-    grid-column: 2;
-    grid-row: 1;
-}
-
-#clear {
-    grid-column: 3;
-    grid-row: 1;
-}
-
-#all-clear {
-    grid-column: 4;
-    grid-row: 1;
-}
-
-#add {
-    grid-column: 4;
-    grid-row: 2;
-}
-
-#subtract {
-    grid-column: 4;
-    grid-row: 3;
-}
-
-#equals {
-    grid-column: 4;
-    grid-row: 4/6;
-}
-
-#seven {
-    grid-column: 1;
-    grid-row: 2;
-}
-
-#eight {
-    grid-column: 2;
-    grid-row: 2;
-}
-
-#nine {
-    grid-column: 3;
-    grid-row: 2;
-}
-
-#four {
-    grid-column: 1;
-    grid-row: 3;
-}
-
-#five {
-    grid-column: 2;
-    grid-row: 3;
-}
-
-#six {
-    grid-column: 3;
-    grid-row: 3;
-}
-
-#one {
-    grid-column: 1;
-    grid-row: 4;
-}
-
-#two {
-    grid-column: 2;
-    grid-row: 4;
-}
-
-#three {
-    grid-column: 3;
-    grid-row: 4;
-}
-
-#zero {
-    grid-column: 1;
-    grid-row: 5;
-}
-
-#decimal {
-    grid-column: 2;
-    grid-row: 5;
-}
-
-#absolute {
-    grid-column: 3;
-    grid-row: 5;
-}
-
-@media screen and (max-width: 1226px) {
-    #calc-container {
-        width: 50vw;
+// Event handlers
+function buttonLogic() {
+    if (Number(this.innerHTML) / 0 == Infinity || this.innerHTML == '0') {
+        numHandler(Number(this.innerHTML));
+    }
+    if (operators.includes(this.innerHTML)) {
+        compute(this.innerHTML);
+    }
+    switch (this.innerHTML) {
+        case 'C':
+            current.innerHTML = 0;
+            operator = null;
+            numInput = false;
+            break;
+        case 'AC':
+            current.innerHTML = 0;
+            old.innerHTML = 0;
+            operator = null;
+            oldOperator = null;
+            numInput = false;
+            initialized = false;
+            firstInitDigit = false;
+            break;
+        case '=':
+            if (initialized && firstInitDigit) {
+                switch (oldOperator) {
+                    case '+':
+                        add();
+                        firstInitDigit = false;
+                        return;
+                    case '-':
+                        subtract();
+                        firstInitDigit = false;
+                        return;
+                    case '×':
+                        multiply();
+                        firstInitDigit = false;
+                        return;
+                    case '÷':
+                        divide();
+                        firstInitDigit = false;
+                        return;
+                }
+            }
+            if (operator && numInput) {
+                switch (operator) {
+                    case '+':
+                        add();
+                        initialized = true;
+                        return;
+                    case '-':
+                        subtract();
+                        initialized = true;
+                        return;
+                    case '×':
+                        multiply();
+                        initialized = true;
+                        return;
+                    case '÷':
+                        divide();
+                        initialized = true;
+                        return; 
+                }
+            }
+        case '.':
+            if (current.innerHTML.includes('.')) {
+                return;
+            } else {
+                current.innerHTML += '.';
+                return;
+            }
+        case '+/-':
+            if (current.innerHTML === '0') {
+                return;
+            }
+            if (current.innerHTML[0] === '-') {
+                current.innerHTML = current.innerHTML.slice(1);
+                return;
+            } else {
+                current.innerHTML = '-' + current.innerHTML;
+                return;
+            }
     }
 }
 
-@media screen and (max-width: 500px) {
-    #calc-container {
-        width: 75vw;
+function numHandler(n) {
+    numInput = true;
+    // Allows chaining of digits in the current segment after a calculation
+    if (firstInitDigit) {
+        if (current.innerHTML === '0') {
+            current.innerHTML = n;
+            return;
+        } else {
+            current.innerHTML += n;
+            return;
+        }
     }
-    
-    #current, #old {
-        margin: 0 .3rem;
+    // Get new digits in the current segment after a calculation
+    if (initialized && this.innerHTML !== '0') {
+        old.innerHTML = current.innerHTML;
+        current.innerHTML = n;
+        firstInitDigit = true;
+        return;
     }
+    if (current.innerHTML === '0') {
+        current.innerHTML = n;
+    } else {
+        current.innerHTML += n;
+    }
+}
+
+function compute(o) {
+    // Handle the switching of operators post-initialization
+    if (numInput === false && initialized) {
+        oldOperator = o;
+        return;
+    }
+    // Handle the switching of operators pre-initialization
+    if (numInput === false) {
+        operator = o;
+        return;
+    }
+    // Handles the first input
+    if (operator === null) {
+        operator = o;
+        old.innerHTML = current.innerHTML;
+        current.innerHTML = 0;
+        // Changes the state to follow that the last thing input was not a number
+        numInput = false;
+        return;
+    } else if (initialized === false && operator !== null) {
+        // Handles the second operator input/prepares the calculator to behave differently
+        oldOperator = o;
+        switch (operator) {
+            case '+':
+                add();
+                initialized = true;
+                return;
+            case '-':
+                subtract();
+                initialized = true;
+                return;
+            case '×':
+                multiply();
+                initialized = true;
+                return;
+            case '÷':
+                divide();
+                initialized = true;
+                return;
+        }
+    }
+    // Initialized: computation now begins after the input of another string of digits and the next operator input
+    if (initialized && firstInitDigit) {
+        switch (oldOperator) {
+            case '+':
+                add();
+                firstInitDigit = false;
+                oldOperator = o;
+                return;
+            case '-':
+                subtract();
+                firstInitDigit = false;
+                oldOperator = o;
+                return;
+            case '×':
+                multiply();
+                firstInitDigit = false;
+                oldOperator = o;
+                return;
+            case '÷':
+                divide();
+                firstInitDigit = false;
+                oldOperator = o;
+                return;
+        }
+    }
+}
+
+function add() {
+    current.innerHTML = Number(old.innerHTML) + Number(current.innerHTML);
+    old.innerHTML = 0;
+    numInput = false;
+}
+
+function subtract() {
+    current.innerHTML = Number(old.innerHTML) - Number(current.innerHTML);
+    old.innerHTML = 0;
+    numInput = false;
+}
+
+function multiply() {
+    current.innerHTML = Number(old.innerHTML) * Number(current.innerHTML);
+    old.innerHTML = 0;
+    numInput = false;
+}
+
+function divide() {
+    // Division by zero yields "undefined" in math
+    if (Number(current.innerHTML) === 0) {
+        current.innerHTML = NaN
+    } else {
+        current.innerHTML = Number(old.innerHTML) / Number(current.innerHTML);
+    }
+    old.innerHTML = 0;
+    numInput = false;
 }
