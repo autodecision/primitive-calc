@@ -7,7 +7,8 @@ buttons.forEach(element => {
     element.addEventListener('click', buttonLogic);
 });
 let operator = null;
-// The calculator behaves differently after its first calculation has finished (i.e. now if "+" is input, it adds the next number entered after another operation is input (such as "=" or "-"))
+/* The calculator behaves differently after its first calculation has finished (i.e. now if "+" is input, it adds the next number
+entered after another operation is input (such as "=" or "-")) */
 let initialized = false;
 // This stores an operator for the process explained in the last comment
 let oldOperator = null;
@@ -15,6 +16,14 @@ let oldOperator = null;
 let numInput = false;
 // Changes number input behavior: allows addition of digits to the "current" string after initialization
 let firstInitDigit = false;
+
+// Helper function to clean up trailing decimals
+function cleanupDecimal(value) {
+    if (typeof value === 'string' && value.endsWith('.')) {
+        return value.slice(0, -1);
+    }
+    return value;
+}
 
 // Event handlers
 function buttonLogic() {
@@ -40,6 +49,9 @@ function buttonLogic() {
             firstInitDigit = false;
             break;
         case '=':
+            // Always clean up current display before calculation
+            current.innerHTML = cleanupDecimal(current.innerHTML);
+            
             if (initialized && firstInitDigit) {
                 switch (oldOperator) {
                     case '+':
@@ -85,6 +97,8 @@ function buttonLogic() {
                 return;
             } else {
                 current.innerHTML += '.';
+                // Mark that we've started number input
+                numInput = true;
                 return;
             }
         case '+/-':
@@ -115,7 +129,7 @@ function numHandler(n) {
     }
     // Get new digits in the current segment after a calculation
     if (initialized && this.innerHTML !== '0') {
-        old.innerHTML = current.innerHTML;
+        old.innerHTML = cleanupDecimal(current.innerHTML);
         current.innerHTML = n;
         firstInitDigit = true;
         return;
@@ -128,6 +142,9 @@ function numHandler(n) {
 }
 
 function compute(o) {
+    // Always clean up current display before any operation
+    current.innerHTML = cleanupDecimal(current.innerHTML);
+    
     // Handle the switching of operators post-initialization
     if (numInput === false && initialized) {
         oldOperator = o;
@@ -141,12 +158,7 @@ function compute(o) {
     // Handles the first input
     if (operator === null) {
         operator = o;
-        // Fix: Handle incomplete decimal input
-        let currentValue = current.innerHTML;
-        if (currentValue.endsWith('.')) {
-            currentValue = currentValue.slice(0, -1); // Remove trailing decimal
-        }
-        old.innerHTML = currentValue;
+        old.innerHTML = current.innerHTML;
         current.innerHTML = 0;
         // Changes the state to follow that the last thing input was not a number
         numInput = false;
