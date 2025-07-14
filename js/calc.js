@@ -141,7 +141,12 @@ function compute(o) {
     // Handles the first input
     if (operator === null) {
         operator = o;
-        old.innerHTML = current.innerHTML;
+        // Fix: Handle incomplete decimal input
+        let currentValue = current.innerHTML;
+        if (currentValue.endsWith('.')) {
+            currentValue = currentValue.slice(0, -1); // Remove trailing decimal
+        }
+        old.innerHTML = currentValue;
         current.innerHTML = 0;
         // Changes the state to follow that the last thing input was not a number
         numInput = false;
